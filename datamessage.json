@@ -1,0 +1,44 @@
+[
+    {
+        "id": 1,
+        "message": "Hello, how are you?",
+        "contact_name": "Alice",
+        "avatar": "https://img.daisyui.com/images/profile/demo/gordon@192.webp",
+        "timestamp": "2024-06-01T10:00:00Z"
+    },
+    {
+        "id": 2,
+        "message": "I'm good, thanks! How about you?",
+        "contact_name": "Bob",
+        "avatar": "https://img.daisyui.com/images/profile/demo/idiotsandwich@192.webp",
+        "timestamp": "2024-06-01T10:01:00Z"
+    },
+    {
+        "id": 3,
+        "message": "Hello, how are you? I'm good btw",
+        "contact_name": "John",
+        "avatar": "https://img.daisyui.com/images/profile/demo/gordon@192.webp",
+        "timestamp": "2024-06-01T10:00:00Z"
+    },
+    {
+        "id": 4,
+        "message": "I'm good, thanks! How about you? How's your doing today ?",
+        "contact_name": "Doe",
+        "avatar": "https://img.daisyui.com/images/profile/demo/idiotsandwich@192.webp",
+        "timestamp": "2024-06-01T10:01:00Z"
+    },
+    {
+        "id": 5,
+        "message": "Hello, how are you?",
+        "contact_name": "Kim",
+        "avatar": "https://img.daisyui.com/images/profile/demo/gordon@192.webp",
+        "timestamp": "2024-06-01T10:00:00Z"
+    },
+    {
+        "id": 6,
+        "message": "I'm good, thanks! How about you?",
+        "contact_name": "Ly",
+        "avatar": "https://img.daisyui.com/images/profile/demo/idiotsandwich@192.webp",
+        "timestamp": "2024-06-01T10:01:00Z"
+    }
+]

@@ -1,0 +1,100 @@
+import GoogleProvider from 'next-auth/providers/google'
+import CredentialsProvider from 'next-auth/providers/credentials'
+import User from '../config/schema/user'
+import { compare } from 'bcryptjs'
+import { NextAuthOptions } from "next-auth";
+import { connect } from '../config/mongodb';
+import { ObjectId } from 'mongodb';
+import dotenv from 'dotenv'
+dotenv.config()
+
+await connect()
+
+export const authOptions: NextAuthOptions = {
+    secret: process.env.NEXTAUTH_SECRET,
+    session: {
+        strategy: 'jwt',
+        maxAge: 1 * 60 * 60 * 24,
+    },
+    pages: {
+        signIn: '/login',
+        signOut: '/login',
+    },
+    providers: [
+        // GoogleProvider({
+        //     clientId: process.env.GOOGLE_ID as string,
+        //     clientSecret: process.env.GOOGLE_SECRET as string,
+        // }),
+        CredentialsProvider({
+            name: 'Credentials',
+            id: 'credentials',
+            credentials: {
+                email: { label: 'Email', type: 'email' },
+                password: { label: 'Password', type: 'password' },
+            },
+            async authorize(crendentials) {
+                await connect()
+
+                if (!crendentials?.email || !crendentials?.password) {
+                    return null
+                }
+
+                const existingUser = await User.findOne({ email: crendentials.email })
+
+                // if(!existingUser.active) throw new Error('Please activate your account')
+                if (!existingUser || !existingUser.password) throw new Error('User not found')
+
+                const passwordMatch = await compare(crendentials.password, existingUser.password)
+                if (!passwordMatch) throw new Error('Incorrect password')
+
+                return {
+                    id: existingUser.id,
+                    name: existingUser.username,
+                    email: existingUser.email,
+                    phoneNumber: existingUser.phoneNumber
+                }
+            }
+        })
+    ],
+    callbacks: {
+        async jwt({ token, account, profile, user }) {
+            if (!token.username) {
+                const user = await User.findOne({ email: token.email });
+                if (user) {
+                    token.username = user.username;
+                } else if (profile?.email) {
+                    let uniqueId = Math.floor(Math.random() * 90000 + 10000);
+                    const newUsername = `${profile.name?.split(' ')[0].toLowerCase()}${uniqueId}`;
+                    const newUser = new User({
+                        _id: new ObjectId(),
+                        email: profile.email,
+                        username: newUsername,
+                        password: null,
+                    });
+                    await newUser.save();
+                    token.username = newUsername;
+                }
+            }
+            return token;
+        },
+        async session({ session, token }) {
+            const existingUser = await User.findOne({ email: token.email })
+            return {
+                ...session,
+                user: {
+                    ...session.user,
+                    username: token?.username || session.user?.name || existingUser?.username,
+                    id: existingUser._id
+                }
+            }
+        },
+        async redirect({ url, baseUrl }) {
+            if (url.startsWith('/')) {
+                return `${baseUrl}/${url}`
+            } else if (new URL(url).origin === baseUrl) {
+                return url
+            }
+            return baseUrl
+        }
+    }
+}
