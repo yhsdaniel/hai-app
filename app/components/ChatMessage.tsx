@@ -26,7 +26,7 @@ export default function ChatMessage({ msg, index, userLogin }: ChatProps) {
                     <div className="chat-header text-black">
                         <time className="text-xs opacity-50">2 hours ago</time>
                     </div>
-                    <div className="chat-bubble bg-black/70">
+                    <div className="chat-bubble bg-black/70 text-white">
                         {msg?.text}
                     </div>
                 </motion.div>
@@ -39,10 +39,10 @@ export default function ChatMessage({ msg, index, userLogin }: ChatProps) {
                     transition={{ duration: 0.2, delay: index * 0.02 }}
                     className="chat chat-end"
                 >
-                    <div className="chat-header text-black">
+                    <div className="chat-header">
                         <time className="text-xs opacity-50">2 hours ago</time>
                     </div>
-                    <div className="chat-bubble bg-violet-500">{msg?.text}</div>
+                    <div className="chat-bubble bg-violet-500 text-white">{msg?.text}</div>
                     <div className="chat-footer text-gray-800">Seen</div>
                 </motion.div>
                 ) : null
