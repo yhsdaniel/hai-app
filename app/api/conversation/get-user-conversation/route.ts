@@ -6,11 +6,10 @@ import { NextRequest, NextResponse } from "next/server";
 connect()
 
 export async function POST(req: NextRequest) {
+    const reqBody = await req.json()
+    const { myUserId, targetId } = reqBody
     try {
-        const reqBody = await req.json()
-        const { myUserId, targetId } = reqBody
         console.log(myUserId, targetId)
-
         // Find user target
         const targetUser = await User.findOne({ _id: targetId })
 

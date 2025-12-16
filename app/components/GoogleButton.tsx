@@ -1,8 +1,40 @@
 'use client'
 
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+
 const GoogleButton = () => {
+    const {data: session, status} = useSession()
+    const router = useRouter()
+    const [hasSignedIn, setHasSignedIn] = useState(false)
+
+    const handleGoogleLogin = async () => {
+        const res = await signIn("google", { redirect: false })
+        if(res?.ok){
+            toast.success('Login google successfully')
+            setHasSignedIn(true)
+        }
+    }
+
+    useEffect(() => {
+        if (hasSignedIn && status === "authenticated" && session?.user?.username) {
+            const username = session?.user?.username.split(" ")[0]?.toLowerCase();
+
+            if (username) {
+                router.push(`/chat`);
+            } else {
+                toast.error("Username not found in session.");
+            }
+        }
+    }, [status, session, hasSignedIn, router]);
+
     return (
-        <button className="flex w-full justify-center gap-5 rounded-lg border-gray-300 border bg-black/80 text-white cursor-pointer mt-6 py-3 px-3 text-sm font-bold hover:bg-black/70 transition-all">
+        <button
+            onClick={handleGoogleLogin} 
+            className="flex w-full justify-center gap-5 rounded-lg border-gray-300 border text-gray-800 hover:bg-gray-100 cursor-pointer mt-6 py-3 px-3 text-sm font-bold transition-all"
+        >
             <GoogleLogo />
             <div>Continue with Google</div>
         </button>

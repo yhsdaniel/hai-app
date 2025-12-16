@@ -5,13 +5,10 @@ import { compare } from 'bcryptjs'
 import { NextAuthOptions } from "next-auth";
 import { connect } from '../config/mongodb';
 import { ObjectId } from 'mongodb';
-import dotenv from 'dotenv'
-dotenv.config()
-
-await connect()
 
 export const authOptions: NextAuthOptions = {
     secret: process.env.NEXTAUTH_SECRET,
+    debug: true,    
     session: {
         strategy: 'jwt',
         maxAge: 1 * 60 * 60 * 24,
@@ -21,10 +18,10 @@ export const authOptions: NextAuthOptions = {
         signOut: '/login',
     },
     providers: [
-        // GoogleProvider({
-        //     clientId: process.env.GOOGLE_ID as string,
-        //     clientSecret: process.env.GOOGLE_SECRET as string,
-        // }),
+        GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        }),
         CredentialsProvider({
             name: 'Credentials',
             id: 'credentials',
@@ -35,20 +32,16 @@ export const authOptions: NextAuthOptions = {
             async authorize(crendentials) {
                 await connect()
 
-                if (!crendentials?.email || !crendentials?.password) {
-                    return null
-                }
+                if (!crendentials?.email || !crendentials?.password) { return null }
 
                 const existingUser = await User.findOne({ email: crendentials.email })
-
-                // if(!existingUser.active) throw new Error('Please activate your account')
-                if (!existingUser || !existingUser.password) throw new Error('User not found')
+                if (!existingUser || !existingUser.password) return null
 
                 const passwordMatch = await compare(crendentials.password, existingUser.password)
-                if (!passwordMatch) throw new Error('Incorrect password')
+                if (!passwordMatch) return null
 
                 return {
-                    id: existingUser.id,
+                    id: existingUser.id.toString(),
                     name: existingUser.username,
                     email: existingUser.email,
                     phoneNumber: existingUser.phoneNumber
@@ -58,43 +51,52 @@ export const authOptions: NextAuthOptions = {
     ],
     callbacks: {
         async jwt({ token, account, profile, user }) {
-            if (!token.username) {
-                const user = await User.findOne({ email: token.email });
-                if (user) {
-                    token.username = user.username;
-                } else if (profile?.email) {
-                    let uniqueId = Math.floor(Math.random() * 90000 + 10000);
-                    const newUsername = `${profile.name?.split(' ')[0].toLowerCase()}${uniqueId}`;
-                    const newUser = new User({
-                        _id: new ObjectId(),
-                        email: profile.email,
-                        username: newUsername,
-                        password: null,
-                    });
-                    await newUser.save();
-                    token.username = newUsername;
+            await connect()
+
+            if (user) {
+                // If Google Sign in
+                if (account?.provider === "google" && profile?.email) {
+                    let existingUser = await User.findOne({ email: profile.email })
+
+                    if (!existingUser) {
+                        existingUser = await User.create({
+                            _id: profile.id,
+                            email: profile.email,
+                            username: profile.name,
+                        })
+                    }
+                    token.id = existingUser._id.toString()
+                    token.username = existingUser.username
+                    token.email = existingUser.email
+                // If Credentials Sign in
+                } else if (account?.provider === 'credentials') {
+                    token.username = user.name
+                    token.email = user.email
+                    token.id = user.id
+
                 }
+            }
+            if(token.id){
+                return token
             }
             return token;
         },
         async session({ session, token }) {
-            const existingUser = await User.findOne({ email: token.email })
-            return {
-                ...session,
-                user: {
-                    ...session.user,
-                    username: token?.username || session.user?.name || existingUser?.username,
-                    id: existingUser._id
-                }
+            session.user = {
+                ...session.user,
+                id: token?.id,
+                username: token?.username
             }
+
+            return session
         },
         async redirect({ url, baseUrl }) {
-            if (url.startsWith('/')) {
-                return `${baseUrl}/${url}`
-            } else if (new URL(url).origin === baseUrl) {
-                return url
-            }
-            return baseUrl
+            // if (url.startsWith('/')) {
+            //     return `${baseUrl}/chat`
+            // } else if (new URL(url).origin === baseUrl) {
+            //     return url
+            // }
+            return `${baseUrl}/chat`
         }
     }
 }

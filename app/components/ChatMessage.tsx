@@ -26,7 +26,7 @@ export default function ChatMessage({ msg, index, userLogin }: ChatProps) {
                     <div className="chat-header text-black">
                         <time className="text-xs opacity-50">2 hours ago</time>
                     </div>
-                    <div className="chat-bubble bg-black/70 text-white">
+                    <div className="chat-bubble bg-gray-600 text-white">
                         {msg?.text}
                     </div>
                 </motion.div>

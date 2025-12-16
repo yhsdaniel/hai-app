@@ -1,20 +1,16 @@
 'use client'
 
-import { ImagePlus, LogOut, MessageCirclePlus, Settings, User } from 'lucide-react'
+import { MessageCirclePlus } from 'lucide-react'
 import { Suspense, useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
 import ContactList from '../components/ContactList';
 import ChatInput from '../components/ChatInput';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import ChatMessage from '../components/ChatMessage';
-import toast from 'react-hot-toast';
 import SkeletonLoader from '../components/ui/skeleton-loader';
-import { CldUploadWidget } from 'next-cloudinary';
-import UploadImage from '@/lib/upload-image';
 import ModalAddUser from '../components/ModalAddUser';
 import Avatar from './Avatar';
+import { fetchProfilePicture } from './api';
 
 type Props = {
     initialParticipants: any[],
@@ -23,13 +19,13 @@ type Props = {
 }
 
 export default function ChatClient({ initialParticipants, initialMessages, serverUser }: Props) {
-    const router = useRouter()
     const ref = useRef<HTMLDivElement | null>(null)
     const socketRef = useRef<any>(null)
     const userLogin = serverUser?.id
     const [participants, setParticipants] = useState<any[]>(initialParticipants || [])
     const [messages, setMessages] = useState<any[]>(initialMessages || [])
     const [currentContact, setCurrentContact] = useState(0)
+    const [profilePicture, setProfilePicture] = useState<string>('');
 
     const scrollToBottom = () => {
         if (ref.current) {
@@ -68,19 +64,45 @@ export default function ChatClient({ initialParticipants, initialMessages, serve
         }
     };
 
-    const submitParticipants = (e: any) => {
+    const submitParticipants = async (e: any, username: string) => {
         e.preventDefault();
-        const val = (e.currentTarget.elements.namedItem('username') as any)?.value;
-        if (val) {
-            const newParticipant = {
-                _id: `tmp-${Date.now()}`,
-                username: val,
-                profilePicture: null
-            };
-            setParticipants(prev => Array.isArray(prev) ? [...prev, newParticipant] : [newParticipant]);
-            (document.getElementById('my_modal_1') as HTMLDialogElement | null)?.close()
+        try {
+            const res = await axios.post('/api/conversation/add-user-conversation', {
+                    myUserId: userLogin,
+                    targetUsername: username,
+            });
+            const { user } = res.data;
+            setParticipants(prev => {
+                const exists = prev.some(p => p._id === user._id);
+                if (!exists) {
+                    return [...prev, { 
+                        _id: user._id, 
+                        username: user.username, 
+                        profilePicture: user.profilePicture 
+                    }];
+                }
+                return prev;
+            });
+            // Close the modal
+            (document.getElementById('my_modal_1') as HTMLDialogElement)?.close();
+        } catch (error: any) {
+            console.log(error);
+            alert(error.response?.data?.error || 'Error adding user');
         }
     }
+
+    const loadProfilePicture = async () => {
+        try {
+            const response = await fetchProfilePicture(serverUser?.id)
+            setProfilePicture(response)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    useEffect(() => {
+        loadProfilePicture()
+    }, [profilePicture])
 
     useEffect(() => {
         if (!userLogin) return;
@@ -105,18 +127,22 @@ export default function ChatClient({ initialParticipants, initialMessages, serve
         const loadConversation = async () => {
             const target = participants[currentContact]?._id;
             if (!target || !userLogin) return;
-            const res = await axios.post('/api/conversation/get-user-conversation', {
-                myUserId: userLogin,
-                targetId: target
-            })
-            const convoId = res.data.conversation?._id;
-            if (!convoId) {
-                setMessages([]);
-                return;
+            try {
+                const res = await axios.post('/api/conversation/get-user-conversation', {
+                    myUserId: userLogin,
+                    targetId: target
+                })
+                const convoId = res.data.conversation?._id;
+                if (!convoId) {
+                    setMessages([]);
+                    return;
+                }
+    
+                const msgRes = await axios.get(`/api/conversation/message/${convoId}`)
+                setMessages(msgRes.data.messages);
+            } catch (error) {
+                console.log(error)
             }
-
-            const msgRes = await axios.get(`/api/conversation/message/${convoId}`)
-            setMessages(msgRes.data.messages);
         };
         loadConversation()
         scrollToBottom()
@@ -130,16 +156,16 @@ export default function ChatClient({ initialParticipants, initialMessages, serve
         <>
             <div className="drawer lg:drawer-open bg-white/80">
                 <input id="my-drawer-4" type="checkbox" className="drawer-toggle" />
-                <div className="drawer-content">
-                    <nav className="navbar w-full bg-white/80 text-black border-b-2 border-gray-200 px-4 h-16 gap-4">
+                <div className={`${!participants[currentContact] && 'hidden'} drawer-content flex flex-col`}>
+                    <nav className={`navbar w-full bg-white/80 text-black border-b-2 border-gray-200 px-4 h-16 gap-4`}>
                         <div className="avatar">
                             <div className="ring-primary ring-offset-base-100 w-10 rounded-full ring-2 ring-offset-2">
-                                <img src={`https://ui-avatars.com/api/?name=${participants[currentContact]?.username}&background=random&color=white`} />
+                                <img src={participants[currentContact]?.profilePicture ? participants[currentContact]?.profilePicture : `https://ui-avatars.com/api/?name=${participants[currentContact]?.username}&background=random&color=white`} />
                             </div>
                         </div>
                         <div className="px-4 font-bold">{participants[currentContact]?.username}</div>
                     </nav>
-                    <div className="h-[calc(100vh-130px)] w-full p-2 overflow-y-scroll flex flex-col">
+                    <div className="size-full p-2 overflow-y-scroll grow bg-gray-50">
                         {messages.length !== 0 && messages.map((msg: any, index: number) => (
                             <ChatMessage key={msg._id} msg={msg} index={index} userLogin={userLogin} />
                         ))}
@@ -148,7 +174,7 @@ export default function ChatClient({ initialParticipants, initialMessages, serve
                     <ChatInput onSend={handleSend} />
                 </div>
                 <aside className="drawer-side min-h-screen flex flex-col pr-4 border-r-2 border-gray-200 bg-white text-black w-80 p-4 overflow-hidden">
-                    <Avatar serverUser={serverUser} />
+                    <Avatar serverUser={serverUser} profilePicture={profilePicture}/>
                     <div className='w-full flex items-center justify-between h-11 mb-4'>
                         <h1 className='text-xl font-bold'>HAIAPP</h1>
                         <button
