@@ -10,8 +10,9 @@ export default function UploadImage({ serverUser }: { serverUser: any }) {
   const [resource, setResource] = useState<any | undefined>(undefined);
 
   const updateProfilePicture = async (imageData: any) => {
+    console.log(imageData)
     try {
-      const response = await axios.post('/api/user/update-profile-picture', {
+      const response = await axios.post('/api/avatar/update-profile-picture', {
         userId: serverUser?.id,
         profilePicture: imageData,
       });
@@ -26,9 +27,19 @@ export default function UploadImage({ serverUser }: { serverUser: any }) {
 
   return (
     <CldUploadWidget
-      options={{ sources: ['local', 'camera', 'google_drive'] }}
-      signatureEndpoint="/api/sign-cloudinary-params"
-      onSuccess={(result, { widget }) => {
+      options={{ 
+        sources: ['local', 'camera', 'google_drive'],
+        clientAllowedFormats: ['png', 'jpeg', 'jpg', 'webp'],
+        maxImageFileSize: 2_000_000,
+        folder: "avatars",
+        thumbnailTransformation: [
+          { width: 256, height: 256 },
+          { quality: 'auto' },
+          { fetch_format: 'auto' }
+        ]
+      }}
+      signatureEndpoint="/api/avatar/sign-cloudinary-params"
+      onSuccess={async (result, { widget }) => {
         const info = result?.info;
         setResource(info);
         if(info?.url){

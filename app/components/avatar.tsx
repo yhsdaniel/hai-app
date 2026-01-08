@@ -30,18 +30,26 @@ export default function Avatar({ serverUser, profilePicture }: { serverUser: any
                         {serverUser?.username}
                     </div>
                     <ul tabIndex={-1} className="dropdown-content menu absolute bg-base-100 rounded-box z-50 w-52 p-2 shadow-sm">
-                        <li><a>
-                            <User className='w-4' />
-                            Profile
-                        </a></li>
-                        <li><a>
-                            <Settings className='w-4' />
-                            Settings
-                        </a></li>
-                        <li onClick={handleSignOut}><a>
+                        <li>
+                            <div className="drawer-content">
+                                <label htmlFor="my-drawer-5" className="drawer-button flex gap-2">
+                                    <User className='w-4' />
+                                    Profile
+                                </label>
+                            </div>
+                        </li>
+                        <li>
+                            <div className="drawer-content">
+                                <label htmlFor="my-drawer-6" className="drawer-button flex gap-2">
+                                    <Settings className='w-4' />
+                                    Settings
+                                </label>
+                            </div>
+                        </li>
+                        <li onClick={handleSignOut}><div>
                             <LogOut className='w-4' />
                             Logout
-                        </a></li>
+                        </div></li>
                     </ul>
                 </div>
             </div>

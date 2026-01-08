@@ -35,7 +35,7 @@ export const fetchConversation = async (myUserId?: string, targetUsername?: stri
 
 export const fetchProfilePicture = async (serverUserId: string) => {
     try {
-        const response = await axios.get(`/api/user/update-profile-picture?userId=${serverUserId}`);
+        const response = await axios.get(`/api/avatar/update-profile-picture?userId=${serverUserId}`);
         return response.data.profilePicture
     } catch (error) {
         console.error('Error fetching profile picture:', error);

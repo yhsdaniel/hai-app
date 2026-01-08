@@ -1,5 +1,5 @@
 import { Participants } from '../chat/api'
-import ButtonContact from './ButtonContact'
+import ButtonContact from './button-contact'
 
 type ContactListProps = {
     participants: Participants[],

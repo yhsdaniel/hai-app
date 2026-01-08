@@ -2,15 +2,18 @@
 
 import { MessageCirclePlus } from 'lucide-react'
 import { Suspense, useEffect, useRef, useState } from 'react'
-import ContactList from '../components/ContactList';
-import ChatInput from '../components/ChatInput';
+import ContactList from '../components/contact-list';
+import ChatInput from '../components/chat-input';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-import ChatMessage from '../components/ChatMessage';
+import ChatMessage from '../components/chat-message';
 import SkeletonLoader from '../components/ui/skeleton-loader';
-import ModalAddUser from '../components/ModalAddUser';
-import Avatar from './Avatar';
+import ModalAddUser from '../components/modal-add-user';
+import Avatar from '../components/avatar';
 import { fetchProfilePicture } from './api';
+import ProfileSettings from '../components/profile-settings';
+import Settings from '../components/setting';
+import sharp from 'sharp';
 
 type Props = {
     initialParticipants: any[],
@@ -156,23 +159,8 @@ export default function ChatClient({ initialParticipants, initialMessages, serve
         <>
             <div className="drawer lg:drawer-open bg-white/80">
                 <input id="my-drawer-4" type="checkbox" className="drawer-toggle" />
-                <div className={`${!participants[currentContact] && 'hidden'} drawer-content flex flex-col`}>
-                    <nav className={`navbar w-full bg-white/80 text-black border-b-2 border-gray-200 px-4 h-16 gap-4`}>
-                        <div className="avatar">
-                            <div className="ring-primary ring-offset-base-100 w-10 rounded-full ring-2 ring-offset-2">
-                                <img src={participants[currentContact]?.profilePicture ? participants[currentContact]?.profilePicture : `https://ui-avatars.com/api/?name=${participants[currentContact]?.username}&background=random&color=white`} />
-                            </div>
-                        </div>
-                        <div className="px-4 font-bold">{participants[currentContact]?.username}</div>
-                    </nav>
-                    <div className="size-full p-2 overflow-y-scroll grow bg-gray-50">
-                        {messages.length !== 0 && messages.map((msg: any, index: number) => (
-                            <ChatMessage key={msg._id} msg={msg} index={index} userLogin={userLogin} />
-                        ))}
-                        <div ref={ref}></div>
-                    </div>
-                    <ChatInput onSend={handleSend} />
-                </div>
+
+                {/* Left Side */}
                 <aside className="drawer-side min-h-screen flex flex-col pr-4 border-r-2 border-gray-200 bg-white text-black w-80 p-4 overflow-hidden">
                     <Avatar serverUser={serverUser} profilePicture={profilePicture}/>
                     <div className='w-full flex items-center justify-between h-11 mb-4'>
@@ -196,6 +184,29 @@ export default function ChatClient({ initialParticipants, initialMessages, serve
                         </ul>
                     </nav>
                 </aside>
+
+                {/* Right Side / Chat Section */}
+                <div className={`${!participants[currentContact] && 'hidden'} drawer-content flex flex-col`}>
+                    <nav className={`navbar w-full bg-white/80 text-black border-b-2 border-gray-200 px-4 h-16 gap-4`}>
+                        <div className="avatar">
+                            <div className="ring-primary ring-offset-base-100 w-10 rounded-full ring-2 ring-offset-2">
+                                <img src={participants[currentContact]?.profilePicture ? participants[currentContact]?.profilePicture : `https://ui-avatars.com/api/?name=${participants[currentContact]?.username}&background=random&color=white`} />
+                            </div>
+                        </div>
+                        <div className="px-4 font-bold">{participants[currentContact]?.username}</div>
+                    </nav>
+                    <div className="size-full p-2 overflow-y-scroll grow bg-gray-50">
+                        {messages.length !== 0 && messages.map((msg: any, index: number) => (
+                            <ChatMessage key={msg._id} msg={msg} index={index} userLogin={userLogin} />
+                        ))}
+                        <div ref={ref}></div>
+                    </div>
+                    <ChatInput onSend={handleSend} />
+                </div>
+                
+                {/* Profile Setting */}
+                <ProfileSettings serverUser={serverUser} profilePicture={profilePicture}/>
+                <Settings />
             </div>
 
             <ModalAddUser submitParticipants={submitParticipants} />

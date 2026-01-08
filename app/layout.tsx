@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "./session-provider";
-import UserSession from "./context/UserSession";
+import UserSession from "./context/user-session";
 import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({

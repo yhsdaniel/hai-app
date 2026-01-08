@@ -8,7 +8,6 @@ import { ObjectId } from 'mongodb';
 
 export const authOptions: NextAuthOptions = {
     secret: process.env.NEXTAUTH_SECRET,
-    debug: true,    
     session: {
         strategy: 'jwt',
         maxAge: 1 * 60 * 60 * 24,
