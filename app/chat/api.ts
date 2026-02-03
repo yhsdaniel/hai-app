@@ -1,7 +1,7 @@
 import axios from "axios"
 
 export type Participants = {
-    id: string,
+    _id: string,
     username: string,
     profilePicture?: string | null
 }
