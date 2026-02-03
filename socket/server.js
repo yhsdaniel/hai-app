@@ -11,6 +11,7 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId;
+    socket.join(userId)
 
     if (userId && userId !== 'undefined' && userId !== 'null') {
         onlineUsers.set(userId, socket.id);

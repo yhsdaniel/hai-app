@@ -8,7 +8,7 @@ type ContactListProps = {
 }
 
 export default function ContactList({
-    participants = [],
+    participants,
     current,
     onChoose
 }: ContactListProps) {
