@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
         if (!user1 || !user2)
             return NextResponse.json({ error: "Missing participants" }, { status: 400 });
 
-        const participants = [user1, user2].sort();
+        const participants = [user1, user2];
 
         let conversation = await Conversation.findOne({ participants });
 

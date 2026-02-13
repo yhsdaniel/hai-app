@@ -7,19 +7,21 @@ import ChatClient from "./chat-client"
 import { connect } from "@/config/mongodb"
 import Conversation from "@/config/schema/conversation"
 import Message from "@/config/schema/message"
+import User from "@/config/schema/user"
+import { getSession } from "@/lib/session"
 
 
 export default async function ChatPage() {
-    const session = await getServerSession(authOptions)
+    const session = await getSession()
 
-    if(!session?.user?.id) {
+    if(!session) {
         redirect('/login')
     }
 
     await connect()
 
     //load conversations for this user
-    const userId = String(session?.user?.id)
+    const userId = session?.id
     const conversation = await Conversation.find({
         participants: userId
     })
@@ -71,11 +73,11 @@ export default async function ChatPage() {
 
     // plain server user object (avoid passing objects with toJSON)
     const serverUserPlain = {
-        id: String(session.user?.id),
-        username: session.user?.username ?? session.user?.name ?? null,
-        name: session.user?.name ?? null,
-        email: session.user?.email ?? null,
-        image: session.user?.image ?? null
+        id: String(session.id),
+        username: session.username ?? session.name ?? null,
+        name: session.name ?? null,
+        email: session.email ?? null,
+        image: session.image ?? null
     }
 
     return (

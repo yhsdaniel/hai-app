@@ -42,7 +42,7 @@ export default function RegisterPage() {
     }
     return (
         <LayoutForm>
-            <form onSubmit={form.handleSubmit(handleSubmitRegister)} autoComplete="off" className="mt-10 text-black">
+            <form onSubmit={form.handleSubmit(handleSubmitRegister)} autoComplete="off" className="mt-6 text-black">
                 <div className='mb-4'>
                     <InputField
                         type="text"
@@ -63,7 +63,7 @@ export default function RegisterPage() {
                         <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
                     )}
                 </div>
-                <div className='mb-6'>
+                <div className='mb-4'>
                     <InputField
                         type="password"
                         id="password"
@@ -73,7 +73,7 @@ export default function RegisterPage() {
                         <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
                     )}
                 </div>
-                <div className='mb-6'>
+                <div className='mb-4'>
                     <InputField
                         type="password"
                         id="confirm_password"
@@ -101,9 +101,9 @@ export default function RegisterPage() {
                     {isSubmitting ? 'Proccessing...' : 'Submit'}
                 </button>
             </form>
-            <span className="text-black text-sm mt-10 text-right">Already have an account? <Link href={'/login'} className='text-blue-600 hover:text-blue-700 cursor-pointer'>Login</Link></span>
+            <span className="text-black text-sm text-right">Already have an account? <Link href={'/login'} className='text-blue-600 hover:text-blue-700 cursor-pointer'>Login</Link></span>
             <GoogleButton />
-            <div className='mt-10'>
+            <div className='mt-2'>
                 <p className='text-xs text-center text-black'>This site is protected by reCAPTCHA and the <span className='italic'>Google Privacy Policy</span> and <span className='italic'>Terms of Service</span> apply.</p>
             </div>
         </LayoutForm>

@@ -10,6 +10,7 @@ import LayoutForm from "../components/layout-form";
 import { useForm } from "react-hook-form";
 import { loginFormInputs, loginSchema } from "@/lib/zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
 
 export default function LoginPage() {
     const form = useForm<loginFormInputs>({
@@ -25,26 +26,37 @@ export default function LoginPage() {
     const handleLogin = async (values: loginFormInputs) => {
         const email = values.email
         const password = values.password
-        await signIn("credentials", {
-            email,
-            password,
-            redirect: false
-        }).then(async (res) => {
-            if (res?.ok) {
-                toast.success('Login successful')
-                const updateSession = await getSession()
-                if (updateSession?.user?.name) {
-                    router.push('/chat')
-                }
-            } else {
-                toast.error("Couldn't get user info")
-            }
-        }).catch((err) => {
-            // Show the actual error message from your server if available
-            const message = err.response?.data?.message || "Something went wrong";
-            toast.error(message);
-            console.error(err);
-        })
+        try {
+            await axios.post('/api/user/login', {
+                email, password
+            }, {
+                withCredentials: true
+            })
+            toast.success('Login successfully')
+            router.replace('/chat')
+        } catch (error) {
+            console.error(error)
+        }
+        // await signIn("credentials", {
+        //     email,
+        //     password,
+        //     redirect: false
+        // }).then(async (res) => {
+        //     if (res?.ok) {
+        //         toast.success('Login successful')
+        //         const updateSession = await getSession()
+        //         if (updateSession?.user?.id) {
+        //             router.push('/chat')
+        //         }
+        //     } else {
+        //         toast.error("Couldn't get user info")
+        //     }
+        // }).catch((err) => {
+        //     // Show the actual error message from your server if available
+        //     const message = err.response?.data?.message || "Something went wrong";
+        //     toast.error(message);
+        //     console.error(err);
+        // })
     }
     return (
         <LayoutForm>

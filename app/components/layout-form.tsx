@@ -10,7 +10,7 @@ export default function LayoutForm({ children }: { children: React.ReactNode }) 
                 </section>
             </div>
             <div className="flex-1 lg:mx-[5%] h-full flex-center">
-                <main className="p-8 rounded-2xl">
+                <main className="px-8 rounded-2xl">
                     <div className='text-center'>
                         <h1 className="text-4xl font-bold text-violet-700">HaiApp</h1>
                     </div>

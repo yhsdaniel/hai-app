@@ -4,7 +4,7 @@ import User from '../config/schema/user'
 import { compare } from 'bcryptjs'
 import { NextAuthOptions } from "next-auth";
 import { connect } from '../config/mongodb';
-import { ObjectId } from 'mongodb';
+import redis from './redis';
 
 export const authOptions: NextAuthOptions = {
     secret: process.env.NEXTAUTH_SECRET,
@@ -59,7 +59,7 @@ export const authOptions: NextAuthOptions = {
 
                     if (!existingUser) {
                         existingUser = await User.create({
-                            _id: profile.id,
+                            _id: profile.sub,
                             email: profile.email,
                             username: profile.name,
                         })
@@ -67,24 +67,39 @@ export const authOptions: NextAuthOptions = {
                     token.id = existingUser._id.toString()
                     token.username = existingUser.username
                     token.email = existingUser.email
-                // If Credentials Sign in
+
+                    // If Credentials Sign in
                 } else if (account?.provider === 'credentials') {
                     token.username = user.name
                     token.email = user.email
                     token.id = user.id
 
+                    // Cache in Redis
+                    await redis.set(
+                        `session:${user.id}`,
+                        JSON.stringify({
+                            id: user.id,
+                            username: user.name,
+                            email: user.email
+                        }),
+                        'EX',
+                        60 * 60 * 24 * 7 // 7 days expiration
+                    )
                 }
             }
-            if(token.id){
-                return token
-            }
-            return token;
+            return token
         },
         async session({ session, token }) {
+            const cachedUser = await redis.get(`session:${token?.id}_${new Date().getTime()}`);
+            if (cachedUser) {
+                session.user = cachedUser as any
+                return session
+            }
+
             session.user = {
-                ...session.user,
-                id: token?.id,
-                username: token?.username
+                id: token?.id as string,
+                username: token?.username as string,
+                email: token?.email as string
             }
 
             return session
@@ -97,5 +112,12 @@ export const authOptions: NextAuthOptions = {
             // }
             return `${baseUrl}/chat`
         }
-    }
+    },
+    // events: {
+    //     async signOut({ token }) {
+    //         if (token?.id) {
+    //             await redis.del(`session:${token.id}`)
+    //         }
+    //     }
+    // }
 }

@@ -10,7 +10,6 @@ export default function UploadImage({ serverUser }: { serverUser: any }) {
   const [resource, setResource] = useState<any | undefined>(undefined);
 
   const updateProfilePicture = async (imageData: any) => {
-    console.log(imageData)
     try {
       const response = await axios.post('/api/avatar/update-profile-picture', {
         userId: serverUser?.id,

@@ -98,7 +98,7 @@ export default function ChatClient({
                     username={participants[currentContact]?.username}
                 >
                     <div className="w-full h-[calc(100vh-120px)] p-2 overflow-y-scroll grow bg-gray-50">
-                        {messages.length !== 0 && messages.map((msg: any, i: number) => (
+                        {messages.map((msg, i) => (
                             <ChatMessage
                                 key={msg._id}
                                 msg={msg}

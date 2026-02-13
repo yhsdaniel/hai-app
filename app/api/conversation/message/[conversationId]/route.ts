@@ -3,6 +3,8 @@ import Message from "@/config/schema/message"
 import mongoose from "mongoose"
 import { NextRequest, NextResponse } from "next/server"
 
+connect()
+
 export async function GET(req: NextRequest, { params }: { params: { conversationId: string } }) {
     const { conversationId } = await params
 
@@ -15,12 +17,10 @@ export async function GET(req: NextRequest, { params }: { params: { conversation
     }
 
     try {
-        await connect()
-        const messages = await Message.find({ conversationId: conversationId.toString() })
+        const messages = await Message.find({ conversationId })
             .sort({ createdAt: 1 })
             .populate("sender", "username profilePicture")
             .populate("receiver", "username profilePicture")
-    
         return NextResponse.json({ messages })
     } catch (error) {
         console.log(error)

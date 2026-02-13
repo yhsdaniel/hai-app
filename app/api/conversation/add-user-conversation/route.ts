@@ -1,6 +1,7 @@
 import { connect } from "@/config/mongodb";
 import Conversation from "@/config/schema/conversation";
 import User from "@/config/schema/user";
+import redis from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
 
 connect()
@@ -22,7 +23,6 @@ export async function POST(req: NextRequest) {
         }
 
         const participantIds = [myUserId, targetUser._id.toString()];
-        participantIds.sort();
 
         let conversation = await Conversation.findOne({
             participants: participantIds,
@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
             conversation = await Conversation.create({
                 participants: participantIds
             });
+            await redis.set(`conversations:${participantIds[0]}:${participantIds[1]}`,
+                JSON.stringify(conversation)
+            );
         }
 
         return NextResponse.json({

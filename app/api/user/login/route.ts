@@ -2,7 +2,7 @@ import { connect } from "@/config/mongodb";
 import User from "@/config/schema/user";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
-import jwt from 'jsonwebtoken';
+import redis from "@/lib/redis";
 
 connect()
 
@@ -23,19 +23,41 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Incorrect email / password' }, { status: 403 })
         }
 
-        const payload = {
-            id: existUser.id,
-            username: existUser.username
-        }
+        // const payload = {
+        //     id: existUser.id,
+        //     username: existUser.username
+        // }
 
-        const token = jwt.sign(payload, 'thisismysecretkey')
-        const cookiesToken = req.cookies.get('token')
+        // const token = jwt.sign(payload, 'thisismysecretkey', {
+        //     expiresIn: '7d'
+        // })
 
-        if(!cookiesToken){
-            return NextResponse.json({ token }, { status: 200 })
-        } else {
-            return NextResponse.json({ token }, { status: 200 })
-        }
+        const sessionId = crypto.randomUUID();
+
+        await redis.set(
+            `session:${sessionId}`,
+            JSON.stringify({
+                id: existUser.id,
+                username: existUser.username,
+                email: existUser.email,
+            }),
+            "EX",
+            60 * 60 * 24 * 7 // 7 days
+        )
+
+        const response = NextResponse.json({ message: 'Login success' })
+
+        // set cookie
+        response.cookies.set("session", sessionId, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 60 * 60 * 24 * 7 // 7 days
+        })  
+
+        return response
+        
     } catch (error) {
         //Handle any unexpected errors
         return NextResponse.json({ error: 'Request login failed' }, { status: 500 })

@@ -1,6 +1,8 @@
 'use client'
 
+import redis from '@/lib/redis';
 import UploadImage from '@/lib/upload-image'
+import axios from 'axios';
 import { LogOut, Settings, User } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -9,11 +11,22 @@ import toast from 'react-hot-toast';
 export default function Avatar({ serverUser, profilePicture }: { serverUser: any, profilePicture: string }) {
     const router = useRouter();
 
-    const handleSignOut = () => {
-        signOut({ redirect: false }).then(() => {
-            toast.success('Logout successful')
+    const handleSignOut = async () => {
+        // signOut({ redirect: false }).then(() => {
+        //     toast.success('Logout successful')
+        //     router.push('/login')
+        // })
+        try {
+            await axios.post('/api/user/logout', {}, {
+                withCredentials: true
+            })
+            toast.success('Logout successfully')
             router.push('/login')
-        })
+            router.refresh()
+        } catch (error) {
+            console.error(error)
+            toast.error('Error logging out')
+        }
     }
 
     return (
