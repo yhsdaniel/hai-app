@@ -30,6 +30,7 @@ jobs:
       - name: Merge to main
         run: |
           git checkout main
-          git merge origin/development --no-ff --no-edit
+          git fetch origin main
+          git merge development
           git push origin main
         
