@@ -12,6 +12,19 @@ export const fetchConversationParticipants = async (userId?: string) => {
     return response.data.uniqueParticipants
 }
 
+export const sendMessage = async (conversationId: string, sender: string, receiver: string, text: string) => {
+    if(!conversationId || !sender || !receiver) return null
+
+    const response = await axios.post('/api/conversation/message/send', {
+        conversationId,
+        sender,
+        receiver,
+        text
+    })
+
+    return response.data.message
+}
+
 export const addUserConversation = async (myUserId: string, targetUsername: string) => {
     await axios.post('/api/conversation/add-user-conversation', {
         myUserId: myUserId,
@@ -22,12 +35,12 @@ export const addUserConversation = async (myUserId: string, targetUsername: stri
         })
 }
 
-export const fetchConversation = async (myUserId?: string, targetUsername?: string) => {
-    if (!myUserId) return null
+export const fetchConversation = async (myUserId: string, targetId: string) => {
+    if (!myUserId || !targetId) return null
 
     const response = await axios.post('/api/conversation/get-user-conversation', {
         myUserId,
-        targetUsername
+        targetId
     })
 
     return response.data.conversation._id
