@@ -32,7 +32,5 @@ jobs:
           git checkout main
           git fetch origin main
           git merge development
-          git add .
-          git commit -m "update (auto-merge)"
           git push origin main
         
