@@ -35,7 +35,7 @@ export default function ChatClient({
     const socketRef = useChatSocket(userLogin, msg => {
         setMessages(prev => [...prev, msg])
     })
-    
+
     const {
         participants,
         currentContact,
@@ -43,16 +43,19 @@ export default function ChatClient({
         activeParticipant,
         addParticipant
     } = useParticipants(initialParticipants, userLogin)
-    
+
     const {
         messages,
         setMessages,
         sendMessage,
+        isLoading
     } = useConversation(userLogin, activeParticipant, socketRef, ref)
 
     useEffect(() => {
-        scrolltoBottom(ref)
-    }, [messages.length])
+        if (!isLoading) {
+            scrolltoBottom(ref)
+        }
+    }, [messages.length, isLoading])
 
     useEffect(() => {
         if (!serverUser?.id) return
@@ -92,26 +95,36 @@ export default function ChatClient({
                 </aside>
 
                 {/* Right Side / Chat Section */}
-                <ChatWrapper 
+                <ChatWrapper
                     participants={!participants[currentContact]}
                     profilePicture={participants[currentContact]?.profilePicture}
                     username={participants[currentContact]?.username}
                 >
                     <div className="w-full h-[calc(100vh-120px)] p-2 overflow-y-scroll grow bg-gray-50">
-                        {messages.map((msg, i) => (
-                            <ChatMessage
-                                key={msg._id}
-                                msg={msg}
-                                index={i}
-                                userLogin={userLogin}
-                            />
-                        ))}
-                        <div ref={ref}></div>
+                        {isLoading ? (
+                            <div className="flex flex-col gap-4 p-4">
+                                <SkeletonLoader />
+                                <SkeletonLoader />
+                                <SkeletonLoader />
+                            </div>
+                        ) : (
+                            <>
+                                {messages.map((msg, i) => (
+                                    <ChatMessage
+                                        key={msg._id}
+                                        msg={msg}
+                                        index={i}
+                                        userLogin={userLogin}
+                                    />
+                                ))}
+                                <div ref={ref}></div>
+                            </>
+                        )}
                     </div>
 
                     <ChatInput onSend={sendMessage} />
                 </ChatWrapper>
-                
+
                 {/* ============= MODAL SETTINGS AND PROFILE ======= */}
                 <ProfileSettings serverUser={serverUser} profilePicture={profilePicture} />
                 <Settings />

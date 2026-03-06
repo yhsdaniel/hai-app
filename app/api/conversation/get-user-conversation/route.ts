@@ -1,46 +1,44 @@
 import { connect } from "@/config/mongodb";
 import Conversation from "@/config/schema/conversation";
-import User from "@/config/schema/user";
 import redis from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
 
-connect()
-
 export async function POST(req: NextRequest) {
-    const reqBody = await req.json()
-    const { myUserId, targetId } = reqBody
     try {
-        // Find user target
-        // const targetUser = await User.findOne({ _id: targetId })
+        await connect();
+        const { myUserId, targetId } = await req.json();
 
-        // if (!targetUser) {
-        //     return NextResponse.json({ error: 'Username not found' }, { status: 404 })
-        // }
-    
-        // if (targetUser._id.toString() === myUserId) {
-        //     return NextResponse.json({ error: 'Cannot chat with yourself' }, { status: 400 });
-        // }
-
-        // // GET FROM DB
-        // const participantIds = [myUserId, targetUser._id.toString()];
-        // participantIds.sort();
-
-        // let conversationIds = await Conversation.findOne({
-        //     participants: participantIds,
-        // });
-        const participantsIds = [myUserId, targetId]
-
-        // GET FROM REDIS
-        const conversation = await redis.get(`conversations:${participantsIds[0]}:${participantsIds[1]}`)
-
-        if(!conversation) {
-            return NextResponse.json({ error: 'Conversation not found in cache ' }, { status: 404 })
+        if (!myUserId || !targetId) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        return NextResponse.json({
-            conversation: JSON.parse(conversation)
-        })
+        // Sort IDs to ensure consistent cache keys and queries
+        const participantIds = [myUserId, targetId].sort();
+        const cacheKey = `conversations:${participantIds[0]}:${participantIds[1]}`;
+
+        // 1. Try Cache
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+            return NextResponse.json({
+                conversation: typeof cached === 'string' ? JSON.parse(cached) : cached
+            });
+        }
+
+        // 2. Fallback to DB
+        const conversation = await Conversation.findOne({
+            participants: { $all: participantIds }
+        });
+
+        if (!conversation) {
+            return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+        }
+
+        // 3. Update Cache
+        await redis.set(cacheKey, JSON.stringify(conversation), "EX", 86400);
+
+        return NextResponse.json({ conversation });
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        console.error("GET_CONVERSATION_ERROR:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

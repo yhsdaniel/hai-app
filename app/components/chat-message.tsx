@@ -1,21 +1,24 @@
 import { motion } from "framer-motion";
+import { IMessage, IUser } from "@/types";
 
 type ChatProps = {
-    msg: {
-        _id: string,
-        text: string,
-        sender: { _id: string },
-        receiver: { _id: string },
-    },
+    msg: IMessage,
     index: number,
     userLogin: string,
 }
 
+const getUserId = (user: IUser | string) => {
+    return typeof user === 'string' ? user : user._id;
+};
+
 export default function ChatMessage({ msg, index, userLogin }: ChatProps) {
+    const senderId = getUserId(msg.sender);
+    const receiverId = getUserId(msg.receiver);
+
     return (
         <>
             {
-                msg?.receiver?._id === userLogin ? (
+                receiverId === userLogin ? (
                     <motion.div
                         key={msg._id}
                         initial={{ opacity: 0, y: 10 }}
@@ -31,7 +34,7 @@ export default function ChatMessage({ msg, index, userLogin }: ChatProps) {
                         </div>
                     </motion.div>
                 )
-                    : msg?.sender?._id === userLogin ? (
+                    : senderId === userLogin ? (
                         <motion.div
                             key={msg._id}
                             initial={{ opacity: 0, y: 10 }}

@@ -1,82 +1,83 @@
-import axios from "axios"
-import { useEffect, useState } from "react"
-import { scrolltoBottom } from "./use-scrollBottom"
-import redis from "@/lib/redis"
-
-export type Message = {
-    _id: string
-    conversationId: string
-    sender: string
-    receiver: string
-    text: string
-}
+import axios from "axios";
+import { useCallback, useEffect, useState } from "react";
+import { scrolltoBottom } from "./use-scrollBottom";
+import { IMessage } from "@/types";
 
 export function useConversation(
     userLogin?: string,
     receiverId?: string,
-    socketRef?: any,
-    ref?: any
+    socketRef?: React.MutableRefObject<any>,
+    scrollRef?: React.RefObject<HTMLDivElement | null>
 ) {
-    const [messages, setMessages] = useState<Message[]>([])
+    const [messages, setMessages] = useState<IMessage[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const sendMessage = async (text: string) => {
-        if (!userLogin || !receiverId) return
-        
+    const loadConversation = useCallback(async () => {
+        if (!userLogin || !receiverId) return;
+        setIsLoading(true);
         try {
-            // GETTING ID FROM CONVERSATION API
-            const conversationId = await axios.post('/api/conversation/get-user-conversation', {
+            const res = await axios.post('/api/conversation/get-user-conversation', {
                 myUserId: userLogin,
                 targetId: receiverId
-            })
-            const idForConversation = conversationId.data.conversation._id
+            });
 
-            // SEND MESSAGE API
+            const convoId = res.data.conversation?._id;
+            if (!convoId) {
+                setMessages([]);
+                return;
+            }
+
+            const msgRes = await axios.get(`/api/conversation/message/${convoId}`);
+            setMessages(msgRes.data.messages);
+
+            setTimeout(() => scrolltoBottom(scrollRef), 100);
+        } catch (error) {
+            console.error("Failed to load conversation", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [userLogin, receiverId, scrollRef]);
+
+    const sendMessage = async (text: string) => {
+        if (!userLogin || !receiverId || !text.trim()) return;
+
+        try {
+            const convoRes = await axios.post('/api/conversation/get-user-conversation', {
+                myUserId: userLogin,
+                targetId: receiverId
+            });
+            const conversationId = convoRes.data.conversation._id;
+
             const res = await axios.post('/api/conversation/message/send', {
-                conversationId: idForConversation,
+                conversationId,
                 sender: userLogin,
                 receiver: receiverId,
                 text
-            })
-            const message = res.data.message
-            // SOCKET FOR SEND MESSAGE
+            });
+
+            const message = res.data.message;
+
             socketRef?.current?.emit('send_message', {
                 to: receiverId,
                 message,
                 conversationId
-            })
-    
-            setMessages(prev => [...prev, message])
+            });
+
+            setMessages(prev => [...prev, message]);
+            setTimeout(() => scrolltoBottom(scrollRef), 100);
         } catch (error) {
-            console.log(error)
+            console.error("Failed to send message", error);
         }
-    }
+    };
 
     useEffect(() => {
-        if (!userLogin || !receiverId) return
-
-        const loadConversation = async () => {
-            const res = await axios.post('/api/conversation/get-user-conversation', {
-                myUserId: userLogin,
-                targetId: receiverId
-            })
-
-            const convoId = res.data.conversation?._id
-            if (!convoId) {
-                setMessages([])
-                return
-            }
-
-            const msgRes = await axios.get(`/api/conversation/message/${convoId}`)
-            setMessages(msgRes.data.messages)
-        }
-
-        loadConversation()
-        scrolltoBottom(ref)
-    }, [userLogin, receiverId, messages.length])
+        loadConversation();
+    }, [loadConversation]);
 
     return {
         messages,
         setMessages,
-        sendMessage
-    }
+        sendMessage,
+        isLoading
+    };
 }
